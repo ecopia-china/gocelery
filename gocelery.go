@@ -64,26 +64,28 @@ func (cc *CeleryClient) WaitForStopWorker() {
 }
 
 // Delay gets asynchronous result
-func (cc *CeleryClient) Delay(task string, args ...interface{}) (*AsyncResult, error) {
+func (cc *CeleryClient) Delay(task, queueName string, args ...interface{}) (*AsyncResult, error) {
 	celeryTask := getTaskMessage(task)
 	celeryTask.Args = args
-	return cc.delay(celeryTask)
+	return cc.delay(celeryTask, queueName)
 }
 
 // DelayKwargs gets asynchronous results with argument map
-func (cc *CeleryClient) DelayKwargs(task string, args map[string]interface{}) (*AsyncResult, error) {
+func (cc *CeleryClient) DelayKwargs(task, queueName string, args map[string]interface{}) (*AsyncResult, error) {
 	celeryTask := getTaskMessage(task)
 	celeryTask.Kwargs = args
-	return cc.delay(celeryTask)
+	return cc.delay(celeryTask, queueName)
 }
 
-func (cc *CeleryClient) delay(task *TaskMessage) (*AsyncResult, error) {
+func (cc *CeleryClient) delay(task *TaskMessage, queueName string) (*AsyncResult, error) {
 	defer releaseTaskMessage(task)
 	encodedMessage, err := task.Encode()
 	if err != nil {
 		return nil, err
 	}
 	celeryMessage := getCeleryMessage(encodedMessage)
+	celeryMessage.Properties.DeliveryInfo.RoutingKey = queueName
+	celeryMessage.Properties.DeliveryInfo.Exchange = queueName
 	defer releaseCeleryMessage(celeryMessage)
 	err = cc.broker.SendCeleryMessage(celeryMessage)
 	if err != nil {
