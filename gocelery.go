@@ -97,6 +97,13 @@ func (cc *CeleryClient) delay(task *TaskMessage, queueName string) (*AsyncResult
 	}, nil
 }
 
+func (cc *CeleryClient) GetAsyncResultByID(taskID string) *AsyncResult {
+	return &AsyncResult{
+		TaskID:  taskID,
+		backend: cc.backend,
+	}
+}
+
 // CeleryTask is an interface that represents actual task
 // Passing CeleryTask interface instead of function pointer
 // avoids reflection and may have performance gain.
